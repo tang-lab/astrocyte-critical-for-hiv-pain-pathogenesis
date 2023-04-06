@@ -1,0 +1,281 @@
+---
+title: "wtgp120Subset"
+author: "JZ"
+date: "2/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+WtGp.astro.dat<-subset(x=astro.dat, subset=(orig.ident=="wt"|orig.ident=="gp120"))
+Wt.astro.dat<-subset(x=WtGp.astro.dat, subset=orig.ident=="wt")
+Gp120.astro.dat<-subset(x=WtGp.astro.dat, subset=orig.ident=="gp120")
+gp120Gal3KO.astro.dat<-subset(x=astro.dat, subset=orig.ident=="gp120Gal3KO")
+Gal3KO.astro.dat<-subset(x=astro.dat, subset=orig.ident=="gal3KO")
+
+AstroCluster7<-subset(x=astro.dat,idents = c("7"))
+```
+
+```{r}
+#FindAllMarkerastrocyteAllgenotype
+WtGpAstro.datallmarkers <- FindAllMarkers(object = WtGp.astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(WtGpAstro.datallmarkers, file="C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGpAstro.datallmarkers.csv")
+```
+
+
+```{r setup, include=FALSE}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/wtGpAstro.umap.png", width = 4, height =3, units = "in", res = 300)
+# astro.dat$orig.ident <- factor(x = astro.dat$orig.ident, levels = c("wt", "gp120", "gp120Gal3KO","gal3KO"))
+DimPlot(WtGp.astro.dat, reduction = "umap",  pt.size = 1.2 , label = T, label.size = 6)
+dev.off()
+```
+
+```{r}
+#Heatmap all marker genes WtGpAstrocyte
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/IntegrateWtGp120AstroAllMarkerMap.png", width=20, height = 6, units = "in", res = 300)
+WtGpAstro.datallmarkersMap<-read_excel("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGpAstro.datallmarkers.xlsx")
+WtGpAstro.datallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 20, wt = avg_log2FC) -> top20
+DoHeatmap(WtGp.astro.dat, features = top20$gene,size = 10, group.by = "seurat_clusters") 
+dev.off()
+```
+```{r}
+#Heatmap all marker genes WtGpAstrocyte
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/IntegrateWtGp120AstroCluster7.png", width=10, height = 3, units = "in", res = 300)
+WtGpAstroCluster7Map<-read_excel("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/CombinedWtGp120Cluster7.xlsx")
+WtGpAstroCluster7Map %>%
+    group_by(cluster) %>%
+    top_n(n = 20, wt = avg_log2FC) -> top20
+  DoHeatmap(WtGp.astro.dat, features = top20$gene,size = 5, group.by = "seurat_clusters") 
+dev.off()
+```
+
+
+
+
+```{r setup, include=FALSE}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/wtGpAstro.umap.merged.png", width = 4, height =3, units = "in", res = 300)
+WtGp.astro.dat$orig.ident <- factor(x = WtGp.astro.dat$orig.ident, levels = c("wt", "gp120", "gp120Gal3KO","gal3KO"))
+my_cols <- c('wt'='blue','gp120'='red','gp120Gal3KO'='green','gal3KO'='gray')
+DimPlot(WtGp.astro.dat, reduction = "umap",  pt.size = 1.2,group.by = "orig.ident")
+dev.off()
+```
+
+
+```{r setup, include=FALSE}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/wtGpAstro.umap.split.png", width = 6, height =3, units = "in", res = 300)
+WtGp.astro.dat$orig.ident <- factor(x = WtGp.astro.dat$orig.ident, levels = c("wt", "gp120", "gp120Gal3KO","gal3KO"))
+my_cols <- c('wt'='blue','gp120'='red','gp120Gal3KO'='green','gal3KO'='gray')
+DimPlot(WtGp.astro.dat, reduction = "umap",  pt.size = 1.2, split.by = "orig.ident",label = T,label.size = 5)
+
+dev.off()
+```
+
+```{r}
+#FindAllMarkerWtgap120
+WtGpAstroallmarkers <- FindAllMarkers(object = WtGp.astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(WtGpAstroallmarkers, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroSub_allmarkers.csv")
+```
+
+```{r}
+#Heatmap all marker genes WtgP120AStrocyte
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroAllMarkerMap.png", width=30, height = 9, units = "in", res = 300)
+WtGpAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroSub_allmarkers-p0.05.xlsx")
+WtGpAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(WtGp.astro.dat, features = top10$gene,size = 18) 
+dev.off()
+```
+
+```{r}
+#FindAllMarkerforWtAstrocyte
+Wt.astro.dat<-subset(x=WtGp.astro.dat, subset=orig.ident=="wt")
+WtAstroallmarkers <- FindAllMarkers(object = Wt.astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(WtAstroallmarkers, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroSub_allmarkers.csv")
+```
+```{r}
+#Heatmap all marker genes WtAStrocyte
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroAllMarkerMap.png", width =4, height = 6, units = "in", res = 300)
+WtAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroSub_allmarkersTop10-p0.05.xlsx")
+WtAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(Wt.astro.dat, features = top10$gene,size = 4) + NoLegend()
+dev.off()
+```
+```{r}
+
+#Heatmap wt markers in Gp120
+Gp120.astro.dat<-subset(x=WtGp.astro.dat, subset=orig.ident=="gp120")
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtMarkerinGp120.png", width =4, height = 6, units = "in", res = 300)
+WtAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroSub_allmarkersTop10-p0.05.xlsx")
+WtAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(Gp120.astro.dat, features = top10$gene,size = 4) + NoLegend()
+dev.off()
+```
+```{r}
+#FindAllMarkerforGp120Astrocyte
+Gp120Astroallmarker <- FindAllMarkers(object = Gp120.astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(Gp120Astroallmarker, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120AstroAllmarkers.csv")
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120AstroAllMarkerMap.png", width =4, height = 6, units = "in", res = 300)
+gp120AstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120AstrocyteTop10genes.xlsx")
+gp120AstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(Gp120.astro.dat, features = top10$gene,size = 4) + NoLegend()
+dev.off()
+```
+
+
+```{r}
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtTgAstroDot.png", width =10, height = 4, units = "in", res = 300)
+DotPlot(WtGp.astro.dat, features = c("Gfap","Gja1","Aqp4","Slc1a2","Slc6a11","Slc7a10","Anxa3", "Nox4", "Aox1", "Col5a3", "Cdh13", "Lgals3" ), cols = c("gray","blue"), group.by = "seurat_clusters",dot.scale = 8, cluster.idents = T) # split.by = "orig.ident") 
+dev.off()
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtTginflammationDot.png", width =14, height = 3, units = "in", res = 300)
+DotPlot(WtGp.astro.dat, features = c("Gja1","Aqp4","Slc1a2","Slc6a11","Slc7a10","Gfap", "Anxa3", "Nox4", "Cdh13", "Aldh1a1", "Bcl2", "Adamts5", "Adra1a", "Col4a5","Lgals3", "Palld", "Ptprj", "Rras2", "C3"), cols = c("gray","blue"), group.by = "seurat_clusters",dot.scale = 8, cluster.idents = T) # split.by = "orig.ident") 
+dev.off()
+```
+
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Lgals3.png", width =10, height = 3, units = "in", res = 300)
+FeaturePlot(Gp120.astro.dat, features = c("Lgals3","Vim","Gfap"), max.cutoff = 3, pt.size =2,  cols = c("lightgrey", "blue"), order = T, ncol=3)
+dev.off()
+```
+
+```{r}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGp-Gfap.png", width =9, height = 3, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Gfap"), max.cutoff = 3, pt.size =1,  cols = c("lightgrey", "blue"), order = T, ncol=3, split.by ="orig.ident" )
+dev.off()
+```
+
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/wtGja1Feature.png", width =6, height = 4, units = "in", res = 300)
+FeaturePlot(Wt.astro.dat, features = c("Slc6a11"), max.cutoff = 3, pt.size =1,  cols = c("lightgrey", "blue"), order = T)
+dev.off()
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120GfapFeature.png", width =12, height = 8, units = "in", res = 300)
+FeaturePlot(Gp120.astro.dat, features = c("Lgals3","C3","Palld", "Ptprj","Hes5"), max.cutoff = 3, pt.size =1,  cols = c("lightgrey", "blue"), ncol=3, order = T)
+dev.off()
+```     
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120GfapFeature.png", width =8, height = 6, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Lgals3","Hes5"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), ncol=3, order = T, split.by = "orig.ident")
+dev.off()
+
+
+```
+
+
+
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Lama2.png", width =10, height = 60, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Lama2","Slc6a11", "Kcnd2", "Gfap", "Aqp4","Vim", "Aldh1l1", "S100b", "Slc7a10", "Ccdc148","Csmd1","Col23a1", "Luzp2"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, ncol=8, split.by = "orig.ident")
+dev.off()
+```
+
+```{r}
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroDot.png", width =10, height = 4, units = "in", res = 300)
+DotPlot(Wt.astro.dat, features = c("Gfap", "Slc6a11","Slc7a10","Csmd1","Col23a1","Ccdc148","Aqp4","Lgals3"), cols = c("gray","blue"), group.by = "seurat_clusters",dot.scale = 8, cluster.idents = T) 
+dev.off()
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtAstroFeature.png", width =25, height = 15, units = "in", res = 300)
+FeaturePlot(Wt.astro.dat, features = c("Gfap","	Slc4a4", "Slc6a11","Slc7a10","Csmd1","Col23a1","Ccdc148","Aqp4","Lgals3", "Luzp2","Slc1a2","Acsbg1","Gja1","Slc1a3","Sox9","Aldoc","Apoe","Gm20713","Aldh1l1","Gjb2","Fzd2","Kcnd2","Gpc5","Id3","Mfge8","Trp63","Tafa1","Vav3","Ctsb","Vim"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, ncol=5)
+dev.off()
+
+Gp120.astro.dat<-subset(x=WtGp.astro.dat, subset=orig.ident=="gp120")
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120AstroDot.png", width =10, height = 4, units = "in", res = 300)
+DotPlot(Gp120.astro.dat, features = c("Gfap", "Slc6a11","Slc7a10","Csmd1","Col23a1","Ccdc148","Aqp4","Lgals3"), cols = c("gray","blue"), group.by = "seurat_clusters",dot.scale = 8, cluster.idents = T) 
+dev.off()
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtTgAstroDot.png", width =10, height = 6, units = "in", res = 300)
+DotPlot(WtGp.astro.dat, features = c("Gfap", "Slc6a11","Slc7a10","Csmd1","Col23a1","Ccdc148","Aqp4","Lgals3"), cols = c("gray","blue"), group.by = "seurat_clusters",dot.scale = 8, cluster.idents = T) 
+dev.off()
+
+```
+```{r}
+#Heatmap all marker genes
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroAllMarkerMap.png", width =20, height = 20, units = "in", res = 300)
+WtGpAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroSub_allmarkers_AdjP0.05.xlsx")
+WtGpAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 20, wt = avg_log2FC) -> top20
+DoHeatmap(WtGp.astro.dat, features = top20$gene) + NoLegend()
+```
+
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Slc6a11.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Slc6a11"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Kcnd2.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Kcnd2"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+```
+
+
+```{r}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGpAstroFeature_Gfap.png", width =8, height = 3.5, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Gfap"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+```
+```{r}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGpAstroFeature_Slc6a11.png", width =8, height = 3.5, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Slc6a11"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+```
+
+```{r}
+png("C:/Users/zyh71/OneDrive/Documents/10xHIV/Gal3PaperSpCombinedAnalysis/results/WtGpAstroFeature_Slc7a10.png", width =8, height = 3.5, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Slc7a10",split.by = "test"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+```
+
+
+
+
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Aqp4.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Aqp4"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Vim.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Vim"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_Aldh1l1.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("Aldh1l1"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroFeature_S100b.png", width =20, height = 10, units = "in", res = 300)
+FeaturePlot(WtGp.astro.dat, features = c("S100b"), max.cutoff = 3, pt.size =1.5,  cols = c("lightgrey", "blue"), order = T, split.by = "orig.ident")
+dev.off()
+
+
+```
+```{r}
+#SubsetCluster6Gal3
+WtGpAstroCluster6<-subset(x=WtGp.astro.dat, idents=c("6"))
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroCluster6Map.png", width =10, height = 20, units = "in", res = 300)
+WtGpAstroClusterMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/WtGpAstroCluster6.xlsx")
+WtGpAstroClusterMap %>%
+    group_by(cluster) %>%
+    top_n(n = 50, wt = avg_log2FC) -> top50
+DoHeatmap(WtGp.astro.dat, features = top50$gene, group.by = "orig.ident") + NoLegend()
+dev.off()
+
+```
+
+
+
+

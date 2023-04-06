@@ -1,0 +1,198 @@
+---
+title: "SpCombinedAnalysis"
+author: "JZ"
+date: "3/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#load necessary packages
+
+if(!require(devtools)){install.packages("devtools")}
+devtools::install_github("xnnba1984/DoubletCollection")
+install.packages("readxl")
+install.packages(scales)
+
+library(Seurat)
+library(cowplot)
+library(scater)
+library(Matrix)
+library(dplyr)
+library(patchwork)
+library(DESeq2)
+library(SeuratObject)
+library(dittoSeq)
+library(DoubletCollection)
+library(magrittr)
+library(data.table)
+library(readxl)
+library(scales)
+
+methods=c("scDblFinder")
+```
+
+```{r}
+#Load 10x Dataset
+
+wt <- Read10X(data.dir = "C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/data/data_Sp11_Wt/filtered")
+wt <- CreateSeuratObject(counts = wt, project = "wt", min.cells = 3,  min.features = 200)
+wt<-subset(wt, subset = nFeature_RNA > 200 & nFeature_RNA < 5000)
+wtsNnucleiNum<-nrow(wt@meta.data)
+
+gp120 <- Read10X(data.dir = "C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/data/data_sp12_gp120/filtered")
+gp120 <- CreateSeuratObject(counts = gp120, project = "gp120", min.cells = 3,  min.features = 200)
+gp120<-subset(gp120, subset = nFeature_RNA > 200 & nFeature_RNA < 5000)
+gp120NucleiNum<-nrow(gp120@meta.data)
+gp120NucleiNum
+
+gp120Gal3KO <- Read10X(data.dir = "C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/data/data_sp8_gp120Gal3KO/filtered")
+gp120Gal3KO <- CreateSeuratObject(counts = gp120Gal3KO, project = "gp120Gal3KO", min.cells = 3,  min.features = 200)
+gp120Gal3KO<-subset(gp120Gal3KO, subset = nFeature_RNA > 200 & nFeature_RNA < 5000)
+gp120Gal3KONucleiNum<-nrow(gp120Gal3KO@meta.data)
+gp120Gal3KONucleiNum
+
+gal3KO <- Read10X(data.dir = "C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/data/data_sp13_Gal3KO/filtered")
+gal3KO <- CreateSeuratObject(counts = gal3KO, project = "gal3KO", min.cells = 3,  min.features = 200)
+gal3KO<-subset(gal3KO, subset = nFeature_RNA > 200 & nFeature_RNA < 5000)
+gal3KONucleiNum<-nrow(gal3KO@meta.data)
+gal3KONucleiNum
+MergedList<- list(wt, gp120, gp120Gal3KO, gal3KO )
+
+#first perform standard normalization and variable feature selection.
+MergedList <- lapply(X = MergedList, FUN = function(x) {
+    x <- NormalizeData(x, verbose = FALSE)
+    x <- FindVariableFeatures(x, verbose = FALSE)
+})
+
+
+#Next, select features for downstream integration, and run PCA on each object in the list, which is required for running the alternative reciprocal PCA workflow.
+features <- SelectIntegrationFeatures(object.list = MergedList)
+MergedList <- lapply(X = MergedList, FUN = function(x) {
+    x <- ScaleData(x, features = features, verbose = FALSE)
+    x <- RunPCA(x, features = features, verbose = FALSE)
+})
+
+anchors <- FindIntegrationAnchors(object.list = MergedList, reference = c(1), reduction = "rpca",
+    dims = 1:50)
+List.integrated <- IntegrateData(anchorset = anchors, dims = 1:50)
+
+List.integrated <- ScaleData(List.integrated, verbose = FALSE)
+List.integrated <- RunPCA(List.integrated, verbose = FALSE)
+List.integrated <- RunUMAP(List.integrated, dims = 1:50)
+List.integrated <- FindNeighbors(List.integrated, reduction = "pca", dims = 1:30)
+List.integrated <- FindClusters(List.integrated, resolution = 0.6)
+#List.integrated.res3.0 <- FindClusters(List.integrated, resolution = 3.0)
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/combinedUMAP.png", width = 12, height = 10, units = "in", res = 300)
+DimPlot(List.integrated, pt.size = 0.7, label.size=20, group.by = "orig.ident" )
+dev.off()
+hue_pal()(4)
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/UMAP_clusterRes.0.6.png", width = 8, height = 6, units = "in", res = 300)
+DimPlot(List.integrated, reduction = "umap", label = TRUE,
+    repel = TRUE)
+dev.off()
+```
+```{r}
+md1 <- List.integrated@meta.data %>% as.data.table
+md1[, .N, by = c("orig.ident","seurat_clusters")]
+CPC_set2=md1 <- md1[, .N, by = c("orig.ident","seurat_clusters")] %>% dcast(., orig.ident ~ seurat_clusters, value.var =
+"N")
+write.csv(CPC_set2, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/IntegratedCluster.csv")
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/celltype.png", width = 10, height = 12, units = "in", res = 300)
+FeaturePlot(List.integrated, features = c("Cx3cr1","Gfap", "Aqp4", "Mbp","Mog " , "Pdgfra","Snhg11"), min.cutoff = "q9", pt.size = 1)
+dev.off()
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/wtgp120.png", width = 8, height = 6, units = "in", res = 300)
+my_cols <- c('wt'='#00BFC4','gp120'='#F8766D','gp120Gal3KO'='#C77CFF','gal3KO'='black')
+DimPlot(List.integrated, group.by = "orig.ident", pt.size = 0.1, label.size=20, cols = my_cols)
+dev.off()
+```
+#astrocyte subset
+```{r}
+astro.dat<-subset(x = List.integrated, idents = c("5", "20")) 
+
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/astro.variable.genes.png", width = 16, height = 4, units = "in", res = 300)
+astro.dat <- FindVariableFeatures(astro.dat, selection.method = "vst", nfeatures = 2000)
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(astro.dat), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(astro.dat)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+dev.off()
+```
+```{r}
+all.genes <- rownames(astro.dat)
+astro.dat <- ScaleData(astro.dat, features = all.genes)
+astro.dat <- RunPCA(astro.dat, features = VariableFeatures(object = astro.dat))
+print(astro.dat[["pca"]], dims = 1:5, nfeatures = 5)
+VizDimLoadings(astro.dat, dims = 1:2, reduction = "pca")
+DimPlot(astro.dat, reduction = "pca")
+DimHeatmap(astro.dat, dims = 1, cells = 500, balanced = TRUE)
+astro.dat <- JackStraw(astro.dat, num.replicate = 100)
+astro.dat <- ScoreJackStraw(astro.dat, dims = 1:20)
+JackStrawPlot(astro.dat, dims = 1:15)
+ElbowPlot(astro.dat)
+astro.dat <- FindNeighbors(astro.dat, dims = 1:10)
+astro.dat <- FindClusters(astro.dat, resolution = 0.5)
+astro.dat <- RunUMAP(astro.dat, dims = 1:10)
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/astro.umap.png", width = 10, height =3, units = "in", res = 300)
+astro.dat$orig.ident <- factor(x = astro.dat$orig.ident, levels = c("wt", "gp120", "gp120Gal3KO","gal3KO"))
+DimPlot(astro.dat, reduction = "umap", split.by = "orig.ident", pt.size = 0.8,  label =T )
+dev.off()
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/astro.SplitByBroup.umap.png", width = 5, height = 3, units = "in", res = 300)
+my_cols <- c('wt'='blue','gp120'='red','gp120Gal3KO'='green','gal3KO'='gray')
+DimPlot(astro.dat, group.by = "orig.ident", pt.size = 1.0, label.size=20, cols = my_cols)
+dev.off()
+```
+```{r}
+md1 <- astro.dat@meta.data %>% as.data.table
+md1[, .N, by = c("orig.ident","seurat_clusters")]
+CPC_set2=md1 <- md1[, .N, by = c("orig.ident","seurat_clusters")] %>% dcast(., orig.ident ~ seurat_clusters, value.var =
+"N")
+write.csv(CPC_set2, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/AstroIntegratedCluster.csv")
+```
+```{r}
+#FindAllMarkerastrocyteAllgenotype
+astro.datallmarkers <- FindAllMarkers(object = astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(astro.datallmarkers, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/IntegratedAstroSub_allmarkers.csv")
+```
+```{r}
+#Heatmap all marker genes AStrocyte in all genotype
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/IntegrateAstroAllMarkerMap.png", width=30, height = 9, units = "in", res = 300)
+IntegrateAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/IntegratedAstroSub_allmarkers_p0.05.xlsx")
+IntegrateAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(astro.dat, features = top10$gene,size = 18, group.by = "orig.ident") 
+dev.off()
+```
+
+```{r}
+gp120Gal3KO.astro.dat<-subset(x=astro.dat, subset=orig.ident=="gp120Gal3KO")
+Gal3KO.astro.dat<-subset(x=astro.dat, subset=orig.ident=="gal3KO")
+```
+```{r}
+astrogp120Gal3KO.datallmarkers <- FindAllMarkers(object = gp120Gal3KO.astro.dat, only.pos = F, min.pct = 0.25, thresh.use = 0.35)
+write.csv(astrogp120Gal3KO.datallmarkers, file="C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120Gal3KOAstroSub_allmarkers.csv")
+```
+```{r}
+png("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120Gal3KOAstroAllMarkerMap.png", width=30, height = 9, units = "in", res = 300)
+gp120Gal3KOAstroallmarkersMap<-read_excel("C:/Users/juzheng/OneDrive/Documents/10xHIV/SpCombinedAnalysis/results/gp120Gal3KOAstroSub_allmarkers_p0.05.xlsx")
+gp120Gal3KOAstroallmarkersMap %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(gp120Gal3KO.astro.dat, features = top10$gene,size = 18) 
+dev.off()
+```
+
